@@ -135,9 +135,7 @@ class CameraBlocker:
                     f.write(f"blacklist {module}\n")
                     f.write(f"install {module} /bin/false\n")
             
-            logging.info("Blacklist-файл создан")
-            self.update_initramfs()
-            
+            logging.info("Blacklist-файл создан. Изменения вступят в силу после перезагрузки.")
             return True
             
         except Exception as e:
@@ -150,8 +148,7 @@ class CameraBlocker:
         try:
             if self.blacklist_file.exists():
                 self.blacklist_file.unlink()
-                logging.info("Blacklist-файл удалён")
-                self.update_initramfs()
+                logging.info("Blacklist-файл удалён. Изменения вступят в силу после перезагрузки.")
             else:
                 logging.info("Blacklist-файл не найден")
             
@@ -159,40 +156,6 @@ class CameraBlocker:
             
         except Exception as e:
             logging.error(f"Ошибка удаления blacklist: {e}")
-            return False
-    
-    def update_initramfs(self):
-        logging.info("Обновление initramfs...")
-        
-        try:
-            commands = [
-                ["update-initramfs", "-u"],
-                ["dracut", "-f"],
-                ["mkinitcpio", "-P"],
-            ]
-            
-            for cmd in commands:
-                try:
-                    result = subprocess.run(
-                        cmd,
-                        capture_output=True,
-                        text=True,
-                        timeout=30
-                    )
-                    if result.returncode == 0:
-                        logging.info("Initramfs обновлён")
-                        return True
-                except FileNotFoundError:
-                    continue
-                except Exception as e:
-                    logging.warning(f"Ошибка обновления initramfs: {e}")
-                    continue
-            
-            logging.warning("Не удалось обновить initramfs")
-            return False
-            
-        except Exception as e:
-            logging.error(f"Ошибка при обновлении initramfs: {e}")
             return False
     
     def kill_camera_processes(self):
