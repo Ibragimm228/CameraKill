@@ -16,6 +16,8 @@ if %errorLevel% neq 0 (
 echo Права администратора подтверждены.
 echo.
 
+powershell -Command "dir '%~dp0' -Recurse | Unblock-File" 2>nul
+
 if exist "C:\ProgramData\CameraBlocker.disabled" (
     echo Обнаружен маркер предыдущего удаления.
     echo.
@@ -39,24 +41,28 @@ echo Копирование файлов...
 copy /Y "camera_blocker.py" "C:\ProgramData\CameraBlocker\camera_blocker.py" >nul
 
 echo Проверка Python...
+set PYTHON_CMD=python
 python --version >nul 2>&1
 if %errorLevel% neq 0 (
-    echo Ошибка: Python не найден.
-    echo Установите Python с https://www.python.org/downloads/
-    pause
-    exit /b 1
+    set PYTHON_CMD=py
+    py --version >nul 2>&1
+    if %errorLevel% neq 0 (
+        echo Ошибка: Python не найден.
+        pause
+        exit /b 1
+    )
 )
 
 echo Создание задачи автозапуска...
-schtasks /create /tn "CameraBlocker" /tr "python C:\ProgramData\CameraBlocker\camera_blocker.py --start" /sc onstart /ru SYSTEM /rl HIGHEST /f >nul 2>&1
+schtasks /create /tn "CameraBlocker" /tr "%PYTHON_CMD% C:\ProgramData\CameraBlocker\camera_blocker.py --start" /sc onstart /ru SYSTEM /rl HIGHEST /f >nul 2>&1
 
 echo Создание ярлыков...
-powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Запустить.lnk'); $Shortcut.TargetPath = 'python'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --start'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,48'; $Shortcut.Save()"
-powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Остановить.lnk'); $Shortcut.TargetPath = 'python'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --stop'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,47'; $Shortcut.Save()"
-powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Статус.lnk'); $Shortcut.TargetPath = 'python'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --status'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,24'; $Shortcut.Save()"
+powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Запустить.lnk'); $Shortcut.TargetPath = '%PYTHON_CMD%'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --start'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,48'; $Shortcut.Save()"
+powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Остановить.lnk'); $Shortcut.TargetPath = '%PYTHON_CMD%'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --stop'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,47'; $Shortcut.Save()"
+powershell -Command "$WshShell = New-Object -comObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%USERPROFILE%\Desktop\Camera Blocker - Статус.lnk'); $Shortcut.TargetPath = '%PYTHON_CMD%'; $Shortcut.Arguments = 'C:\ProgramData\CameraBlocker\camera_blocker.py --status'; $Shortcut.WorkingDirectory = 'C:\ProgramData\CameraBlocker'; $Shortcut.IconLocation = 'shell32.dll,24'; $Shortcut.Save()"
 
 echo Блокировка камер...
-python "C:\ProgramData\CameraBlocker\camera_blocker.py" --block
+%PYTHON_CMD% "C:\ProgramData\CameraBlocker\camera_blocker.py" --block
 echo.
 
 echo ========================================
